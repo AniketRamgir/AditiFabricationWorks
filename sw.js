@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aditi-invoice-cache-v1';
+const CACHE_NAME = 'aditi-invoice-cache-v2';
 const urlsToCache = [
   './',
   './index.html',
@@ -9,16 +9,17 @@ const urlsToCache = [
   './icon-512.png',
   'https://cdn.tailwindcss.com',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+  'https://unpkg.com/react@18/umd/react.production.min.js',
+  'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
+  'https://unpkg.com/@babel/standalone/babel.min.js'
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
-        // Use addAll to fetch and cache all the resources.
-        // It's atomic - if one fetch fails, the whole operation fails.
+        console.log('Opened cache and caching assets');
         return cache.addAll(urlsToCache);
       })
   );
@@ -33,18 +34,18 @@ self.addEventListener('fetch', event => {
           return response;
         }
 
-        // Clone the request because it's a stream and can only be consumed once.
         const fetchRequest = event.request.clone();
 
         return fetch(fetchRequest).then(
           response => {
-            // Check if we received a valid response
-            if(!response || response.status !== 200 || response.type !== 'basic') {
-              // Don't cache opaque responses from third-party scripts (like react cdn) for now.
+            // Only cache valid responses. 
+            // For basic requests (our own files), we require a 200 status.
+            // For opaque requests (from CDNs), we cache them as is, 
+            // as we can't see their status. This enables offline functionality.
+            if(!response || (response.status !== 200 && response.type === 'basic')) {
               return response;
             }
 
-            // Clone the response because it's a stream and can only be consumed once.
             const responseToCache = response.clone();
 
             caches.open(CACHE_NAME)
@@ -66,6 +67,7 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
