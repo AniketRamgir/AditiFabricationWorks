@@ -1,0 +1,5 @@
+{
+  "name": "Aditi Fabrication Works Invoice Generator",
+  "description": "A modern web application to create, calculate, and print bill invoices for Aditi Fabrication Works. This app is designed with a mobile-first approach, allows dynamic item addition, and generates a print-friendly PDF of the invoice.",
+  "requestFramePermissions": []
+}
