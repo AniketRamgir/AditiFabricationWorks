@@ -1,16 +1,32 @@
 import React, { useState } from 'react';
 import LandingPage from './components/LandingPage';
-import Invoice from './components/Invoice';
+import InvoiceForm from './components/InvoiceForm';
+import AnalyticsPage from './components/AnalyticsPage';
 
 const App: React.FC = () => {
-  const [view, setView] = useState('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'invoice' | 'analytics'>('landing');
 
-  return (
-    <div className="bg-gray-50 min-h-screen">
-      {view === 'landing' && <LandingPage onStart={() => setView('invoice')} />}
-      {view === 'invoice' && <Invoice onBack={() => setView('landing')} />}
-    </div>
-  );
+  const navigateToInvoice = () => {
+    setCurrentPage('invoice');
+  };
+
+  const navigateToAnalytics = () => {
+    setCurrentPage('analytics');
+  };
+
+  const navigateToHome = () => {
+    setCurrentPage('landing');
+  };
+
+  if (currentPage === 'landing') {
+    return <LandingPage onNavigateToInvoice={navigateToInvoice} onNavigateToAnalytics={navigateToAnalytics} />;
+  }
+
+  if (currentPage === 'analytics') {
+    return <AnalyticsPage onNavigateHome={navigateToHome} />;
+  }
+
+  return <InvoiceForm onNavigateHome={navigateToHome} />;
 };
 
 export default App;

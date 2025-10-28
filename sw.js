@@ -1,21 +1,15 @@
-const CACHE_NAME = 'aditi-invoice-cache-v2'; // Bump version to ensure new files are cached
+const CACHE_NAME = 'aditi-invoice-cache-v3';
 const urlsToCache = [
-  './',
-  './index.html',
-  './index.tsx',
-  './App.tsx',
-  './types.ts',
-  './components/CustomerDetails.tsx',
-  './components/Invoice.tsx',
-  './components/InvoiceFooter.tsx',
-  './components/InvoiceHeader.tsx',
-  './components/InvoiceItemsTable.tsx',
-  './components/InvoiceTotals.tsx',
-  './components/LandingPage.tsx',
-  './components/PrintButton.tsx',
-  './utils/helpers.ts',
-  './icon-192.png',
-  './icon-512.png',
+  '/',
+  '/index.html',
+  '/index.tsx',
+  '/App.tsx',
+  '/types.ts',
+  '/components/LandingPage.tsx',
+  '/components/InvoiceForm.tsx',
+  '/components/AnalyticsPage.tsx',
+  '/icon-192.png',
+  '/icon-512.png',
   'https://cdn.tailwindcss.com',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
@@ -26,6 +20,8 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Opened cache');
+        // Use addAll to fetch and cache all the resources.
+        // It's atomic - if one fetch fails, the whole operation fails.
         return cache.addAll(urlsToCache);
       })
   );
@@ -35,26 +31,29 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
+        // Cache hit - return response
         if (response) {
           return response;
         }
 
+        // Clone the request because it's a stream and can only be consumed once.
         const fetchRequest = event.request.clone();
 
         return fetch(fetchRequest).then(
           response => {
-            if(!response || response.status !== 200) {
+            // Check if we received a valid response
+            if(!response || response.status !== 200 || response.type !== 'basic') {
+              // Don't cache opaque responses from third-party scripts (like react cdn) for now.
               return response;
             }
-            
-            // Only cache basic responses and CDN scripts to avoid caching errors
-            if(response.type === 'basic' || event.request.url.startsWith('https://cdnjs.cloudflare.com')) {
-                const responseToCache = response.clone();
-                caches.open(CACHE_NAME)
-                  .then(cache => {
-                    cache.put(event.request, responseToCache);
-                  });
-            }
+
+            // Clone the response because it's a stream and can only be consumed once.
+            const responseToCache = response.clone();
+
+            caches.open(CACHE_NAME)
+              .then(cache => {
+                cache.put(event.request, responseToCache);
+              });
 
             return response;
           }
